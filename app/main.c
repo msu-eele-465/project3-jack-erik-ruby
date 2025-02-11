@@ -52,7 +52,6 @@ __interrupt void ISR_TB0_CCR0(void)
 {
      P1OUT |= BIT0;//1
      TB0CCTL0 &= ~CCIFG;        //Clear CCR0 flag
-
 }
 
 #pragma vector = TIMER0_B1_VECTOR
@@ -60,27 +59,18 @@ __interrupt void ISR_TB0_CCR1(void)
 {
      P1OUT &= ~BIT0;//0
      TB0CCTL1 &= ~CCIFG;        //Clear CCR1 Flag
-
-
 }
 
 #pragma vector = PORT2_VECTOR
 __interrupt void ISR_TB0_PORT2(void){
-
     TB0CCR1 += 25; //increment by 25 %
-
     if (TB0CCR1 > 500){TB0CCR1 = 500;} // check to see if it reaches 500
-
     P2IFG &= ~BIT3;        //Clear
 }
 
 #pragma vector = PORT4_VECTOR
 __interrupt void ISR_TB0_PORT4(void){
-
-
     TB0CCR1 -= 25; //decrement by 25%
-
     if (TB0CCR1 < 25){TB0CCR1 = 25;} // check to see if it reaches 25
-
     P4IFG &= ~BIT1;        //Clear
 }

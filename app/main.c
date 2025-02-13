@@ -40,11 +40,24 @@ int main(void)
     TB0CCR0 = T;
     TB0CCR1 = deltaT;
 
-    // Timer Compares
+    // Timer B1
+    // Math: 1s = (1*10^-6)(D1)(D2)(50k)    D1 = 5, D2 = 4
+    TB1CTL |= TBCLR;        // Clear timer and dividers
+    TB1CTL |= TBSSEL__SMCLK;  // Source = SMCLK
+    TB1CTL |= MC__UP;       // Mode UP
+    TB1CTL |= ID__4;         // divide by 4 (10)
+    TB1EX0 |= TBIDEX__5;    // divide by 5 (100)
+    TB1CCR0 = 50000;
+
+    // Timer B0 Compares
     TB0CCTL0 &= ~CCIFG;     // Clear CCR0
     TB0CCTL0 |= CCIE;       // Enable IRQ
     TB0CCTL1 &= ~CCIFG;     // Clear CCR1
     TB0CCTL1 |= CCIE;       // Enable IRQ
+
+    // Timer B1 Compare
+    TB1CCTL0 &= ~CCIFG;     // Clear CCR0
+    TB1CCTL0 |= CCIE;       // Enable IRQ
 
     __enable_interrupt();   // enable maskable IRQs
     PM5CTL0 &= ~LOCKLPM5;   // turn on GPIO
@@ -65,7 +78,7 @@ int main(void)
 #pragma vector = TIMER0_B0_VECTOR
 __interrupt void TB0PeriodReached(void)
 {
-    P1OUT |= BIT0;          // LED1 on
+    // P1OUT |= BIT0;          // LED1 on
     TB0CCTL0 &= ~CCIFG;     // clear flag
 }
 // ----- end periodReached-----
@@ -74,10 +87,19 @@ __interrupt void TB0PeriodReached(void)
 #pragma vector = TIMER0_B1_VECTOR
 __interrupt void pulseLengthReached(void)
 {
-    P1OUT &= ~BIT0;          // LED1 off
+    // P1OUT &= ~BIT0;          // LED1 off
     TB0CCTL1 &= ~CCIFG;     // clear flag
 }
 // ----- end pulseLengthReached-----
+
+// Heartbeat LED
+#pragma vector = TIMER1_B0_VECTOR
+__interrupt void heartbeatLED(void)
+{
+    P1OUT ^= BIT0;          // LED1 xOR
+    TB1CCTL0 &= ~CCIFG;     // clear flag
+}
+// ----- end heartbeatLED-----
 
 // increaseDutyCycle
 #pragma vector = PORT4_VECTOR

@@ -76,9 +76,19 @@ int main(void)
     PM5CTL0 &= ~LOCKLPM5;                   // Disable the GPIO power-on default high-impedance mode
                                             // to activate previously configured port settings
 
+    Keypad keypad = {
+        .lockState = 1;                           // locked is 1
+        .rowPins = {BIT3, BIT2, BIT1, BIT0};      // order is 5, 6, 7, 8
+        .colPins = {BIT4, BIT5, BIT2, BIT0};      // order is 1, 2, 3, 4
+        .passkey = {1,2,3,4};
+    };
+
+    init_keypad(&keypad);
+
     while(1)
     {
         P1OUT ^= BIT0;                      // Toggle P1.0 using exclusive-OR
         __delay_cycles(100000);             // Delay for 100000*(1/MCLK)=0.1s
+        scanKeypad(&keypad)
     }
 }

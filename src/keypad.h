@@ -21,7 +21,7 @@
         int lockState;
         int rowPins[4];      // order is 5, 6, 7, 8
         int colPins[4];      // order is 1, 2, 3, 4
-        int passkey[4];
+        char passkey[4];
     } Keypad;
 
     extern char keyChar [4][4];

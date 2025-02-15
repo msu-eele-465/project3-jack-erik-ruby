@@ -25,13 +25,14 @@ void init_keypad(Keypad *keypad) {
         P2OUT |= keypad->colPins[i];         // set high
     }
 
-    // set passkey
-    for (i = 0; i < 4; i++){
-        keypad->password[i] = passkey[i];
-    }
+    // this functionality is already hardcoded by the struct init
+    // set passkey, 
+    // for (i = 0; i < 4; i++){
+    //     keypad->password[i] = passkey[i];
+    // }
 
     // lock keypad
-    keypad->lockState = LOCKED;
+    // keypad->lockState = LOCKED;
 }
 void setLock(Keypad *keypad, int lock) {
     if (lock != LOCKED)

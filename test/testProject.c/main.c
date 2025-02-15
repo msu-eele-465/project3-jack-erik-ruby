@@ -80,8 +80,11 @@ int main(void)
         .lockState = 1;                           // locked is 1
         .rowPins = {BIT3, BIT2, BIT1, BIT0};      // order is 5, 6, 7, 8
         .colPins = {BIT4, BIT5, BIT2, BIT0};      // order is 1, 2, 3, 4
-        .passkey = {1,2,3,4};
+        .passkey = {'2','B','0','5'};
     };
+
+    char pkAttempt[4] = ;
+    char curChar;
 
     init_keypad(&keypad);
 
@@ -89,6 +92,6 @@ int main(void)
     {
         P1OUT ^= BIT0;                      // Toggle P1.0 using exclusive-OR
         __delay_cycles(100000);             // Delay for 100000*(1/MCLK)=0.1s
-        scanKeypad(&keypad)
+        scanKeypad(&keypad, &curChar);
     }
 }

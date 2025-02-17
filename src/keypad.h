@@ -1,8 +1,7 @@
 #ifndef  KEYPAD_H
 #define KEYPAD_H
-    #include "msp430fr2355.h"
+    #include <msp430.h>
     #include <stdio.h>
-    #include </msp430.h>
 
     #ifndef LOCKED
     #define LOCKED 1
@@ -18,16 +17,17 @@
     #endif
 
     typedef struct {
-        int lockState;
-        int rowPins[4];      // order is 5, 6, 7, 8
-        int colPins[4];      // order is 1, 2, 3, 4
+        int lock_state;
+        int row_pins[4];      // order is 5, 6, 7, 8
+        int col_pins[4];      // order is 1, 2, 3, 4
         char passkey[4];
     } Keypad;
 
-    extern char keyChar [4][4];
+    extern char key_chars [4][4];
 
     void init_keypad(Keypad *keypad);
-    void setLock(Keypad *keypad, int lock);
-    void scanKeypad(Keypad *keypad);
+    void set_lock(Keypad *keypad, int lock);
+    int scan_keypad(Keypad *keypad, char *key_press);
+    int compare_pw(char passkey[], char guess[]);
 
 #endif

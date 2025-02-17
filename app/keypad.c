@@ -1,9 +1,8 @@
-#include <msp430.h>
 #include "../src/keypad.h"
-#include "msp430fr2355.h"
+#include <msp430.h>
 
 // reversed to match datasheet to match pin indices
-char keyChars[4][4] = {
+char key_chars[4][4] = {
     {'D', '#', '0', '*'},  
     {'C', '9', '8', '7'},  
     {'B', '6', '5', '4'},  
@@ -14,15 +13,15 @@ void init_keypad(Keypad *keypad) {
     // set keypad row pins as input
     int i;
     for (i = 0; i < 4; i++){
-        P6DIR &= ~(keypad->rowPins[i]);        // set pin to input
-        P6REN |= keypad->rowPins[i];         // enable pull up/down resistor
-        P6OUT |= keypad->rowPins[i];         // set pull up resistor
+        P6DIR &= ~(keypad->row_pins[i]);        // set pin to input
+        P6REN |= keypad->row_pins[i];         // enable pull up/down resistor
+        P6OUT |= keypad->row_pins[i];         // set pull up resistor
     }
 
     // set keypad col pins as output
     for (i = 0; i < 4; i++){
-        P2DIR |= keypad->colPins[i];         // set pin to output
-        P2OUT |= keypad->colPins[i];         // set high
+        P2DIR |= keypad->col_pins[i];         // set pin to output
+        P2OUT |= keypad->col_pins[i];         // set high
     }
 
     // this functionality is already hardcoded by the struct init
@@ -34,29 +33,47 @@ void init_keypad(Keypad *keypad) {
     // lock keypad
     // keypad->lockState = LOCKED;
 }
-void setLock(Keypad *keypad, int lock) {
+void set_lock(Keypad *keypad, int lock) {
     if (lock != LOCKED)
-        keypad->lockState = UNLOCKED;
+        keypad->lock_state = UNLOCKED;
     else
-        keypad->lockState = LOCKED;
+        keypad->lock_state = LOCKED;
 }
-int scanKeypad(Keypad *keypad, char *keyPress) {
+int scan_keypad(Keypad *keypad, char *key_press) {
     // for each col, check if there is a LOW row
-    for(int col = 0; col < 4; col++){
+    int col, row;
+
+    for(col = 0; col < 4; col++){
         // clear, set col LOW
-        P2OUT &= ~keypad->colPins[col];
+        P2OUT &= ~keypad->col_pins[col];
+        __delay_cycles(1000);
 
-        for(int row = 0; row < 4; row++){
-            if (!(P2IN & keypad->rowPins[row])){
-                keyPress = keyChars[row][col];
-
+        for(row = 0; row < 4; row++){
+            if (!(P6IN & keypad->row_pins[row])){
+                printf("got input! switch from %c to %c\n", *key_press, key_chars[row][col]);
+                *key_press = key_chars[row][col];
                 // set col HIGH
-                P2OUT |= keypad->colPins[col];
+                P2OUT |= keypad->col_pins[col];
                 return SUCCESS;
             }
         }
         // set col HIGH
-        P2OUT |= keypad->colPins[col];
+        P2OUT |= keypad->col_pins[col];
     }
     return FAILURE;
+}
+
+int compare_pw(char *passkey, char *guess){
+    int current;
+    for (current = 0; current < 4; current++){
+        if (passkey[current] != guess[current]){
+            int i;
+            for (i = 0; i < 4; i++){
+                guess[i] = 'x';
+            }
+            return FAILURE;
+        }
+            
+    }
+    return SUCCESS;
 }

@@ -72,15 +72,15 @@ void set_LED(status_LED *sl, LED_State s)
     // Count up to deltaT, then to T-deltaT, then to T-that, etc.
    switch (s) 
    {
-        case LOCKED:        // set pwm to rgb(196 62 29)
+        case LEDLOCKED:        // set pwm to rgb(196 62 29)
             TB3CCR1 = 255;  // CCR1 PWM duty cycle: Amount of red 
             TB3CCR2 = 0;   // CCR2 PWM duty cycle: Amount of green 
             TB3CCR3 = 0;   // CCR3 PWM duty cycle: Amount of blue
             break;
 
         case MIDUNLOCK:     // rgb(196 146 29) changed to look more yellow
-            TB3CCR1 = ;  
-            TB3CCR2 = 255;   
+            TB3CCR1 = 220;  
+            TB3CCR2 = 120;   
             TB3CCR3 = 0;   
             break;
 

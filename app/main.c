@@ -20,7 +20,7 @@ __attribute__((persistent)) static status_LED status_led =
     .red_port_bit = BIT0,
     .green_port_bit = BIT1,
     .blue_port_bit = BIT2,
-    .current_state = LOCKED
+    .current_state = LEDLOCKED
 };
 
 

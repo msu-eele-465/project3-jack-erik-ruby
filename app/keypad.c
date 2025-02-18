@@ -14,9 +14,9 @@ void init_keypad(Keypad *keypad) {
     // set keypad row pins as input
     int i;
     for (i = 0; i < 4; i++){
-        P6DIR &= ~(keypad->row_pins[i]);        // set pin to input
-        P6REN |= keypad->row_pins[i];         // enable pull up/down resistor
-        P6OUT |= keypad->row_pins[i];         // set pull up resistor
+        P5DIR &= ~(keypad->row_pins[i]);        // set pin to input
+        P5REN |= keypad->row_pins[i];         // enable pull up/down resistor
+        P5OUT |= keypad->row_pins[i];         // set pull up resistor
     }
 
     // set keypad col pins as output
@@ -54,7 +54,7 @@ int scan_keypad(Keypad *keypad, char *key_press) {
         __delay_cycles(1000);
 
         for(row = 0; row < 4; row++){
-            if (!(P6IN & keypad->row_pins[row])){
+            if (!(P5IN & keypad->row_pins[row])){
                 printf("got input! switch from %c to %c\n", *key_press, key_chars[row][col]);
                 *key_press = key_chars[row][col];
                 // set col HIGH
@@ -88,13 +88,13 @@ int reset_pk(char *passkey){
     }
 }
 
-void check_status(Keypad *keypad, char pk_attempt[]){
+int check_status(Keypad *keypad, char pk_attempt[]){
     int ret;
     ret = compare_pw(keypad->passkey, pk_attempt);
     if (ret != SUCCESS){
-        printf("failed to unlock, resetting");
+       return FAILURE;
     } else {
         keypad->lock_state = UNLOCKED;
-        printf("unlocked keypad\n");
+        return SUCCESS;
     }
 }

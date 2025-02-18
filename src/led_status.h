@@ -26,17 +26,17 @@ typedef enum
 /**
 * holds port addresses and bits for RGB outputs plus current state
 */
-struct status_LED 
+typedef struct status_LED 
 { 
     const uint16_t led_port_base_addr;
     const uint16_t red_port_bit;
     const uint16_t green_port_bit;
     const uint16_t blue_port_bit;
     LED_State current_state;
-};
+} status_LED;
 
-void init_LED(struct status_LED sL);
+void init_LED(status_LED sL);
 
-void set_LED(struct status_LED *sL, LED_State s);
+void set_LED(status_LED *sL, LED_State s);
 
 #endif // LED_H

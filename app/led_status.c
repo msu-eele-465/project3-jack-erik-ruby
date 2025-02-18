@@ -22,7 +22,7 @@
 *
 * @return: NA
 */
-void init_LED(struct status_LED sl)
+void init_LED(status_LED sl)
 {
     // Define the base addresses for the port multiplexing registers, PxSEL1 and
     // PxSEL0. These offsets are the same for all ports, and are defined in
@@ -33,7 +33,7 @@ void init_LED(struct status_LED sl)
      // Configure GPIO
     *PX_DIR |= sl.red_port_bit + sl.green_port_bit + sl.blue_port_bit;
     *PX_SEL0 |= sl.red_port_bit + sl.green_port_bit + sl.blue_port_bit;
-    
+
     TB3CCR0 = 256-1;                          // PWM Period
     TB3CCTL1 = OUTMOD_7;                      // CCR1 reset/set (red)
     TB3CCTL2 = OUTMOD_7;                      // CCR2 reset/set (green)
@@ -58,7 +58,7 @@ void init_LED(struct status_LED sl)
 *
 * @return: NA
 */
-void set_LED(struct status_LED *sl, LED_State s)
+void set_LED(status_LED *sl, LED_State s)
 {
     sl->current_state = s;
     TB3CTL &= ~MC__UP;  // setting MC=0 to stop timer

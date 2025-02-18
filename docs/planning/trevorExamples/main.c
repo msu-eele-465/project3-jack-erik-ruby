@@ -73,7 +73,7 @@ void init(void)
 }
 
 
-void main(void)
+int main(void)
 {
     char buf[BUF_SIZE];
 

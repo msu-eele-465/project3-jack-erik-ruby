@@ -3,20 +3,22 @@
  * Last modified: March 6 2024 EC
  */
 #include <msp430.h> 
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "led_status.h"
 
 
-int deltaT = 263;       // delta-t = 1050*.25 = 250
-int T = 1050;           // T = 1/1M * N. N = 1000 (Used 1050 for an actual T= 1ms)
-
-static struct status_LED status_led =
+// #pragma PERSISTENT stores these variables in FRAM so they persist across
+// power cycles. This way the DAC voltages can be set once, rather than having
+// to set them every time we power on the system.
+__attribute__((persistent)) static status_LED status_led =
 {
-    led_port_base_addr = P6_BASE;
-    red_port_bit = BIT0;
-    green_port_bit = BIT1;
-    blue_port_bit = BIT2;
-    LED_State current_state = LOCKED;
+    .led_port_base_addr = P6_BASE,
+    .red_port_bit = BIT0,
+    .green_port_bit = BIT1,
+    .blue_port_bit = BIT2,
+    .current_state = LOCKED
 };
 
 
@@ -40,8 +42,8 @@ void init_unused(void)
     P5DIR |= BIT4 | BIT3 | BIT2 | BIT1 | BIT0;
     P5OUT &= ~(BIT4 | BIT3 | BIT2 | BIT1 | BIT0);
 
-    P6DIR |= BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0;
-    P6OUT &= ~(BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0);
+    // P6DIR |= BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0;
+    // P6OUT &= ~(BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0);
 }
 
 
@@ -53,27 +55,7 @@ void init(void)
 //------------- Setup Ports --------------------
     // LED1
     P1DIR |= BIT0;          // Config as Output
-    P1OUT |= BIT0;          // turn on to start for dimmer
-
-    // Switches
-    P4DIR &= ~BIT1;         // clear 4.1 direction = input
-    P4REN |= BIT1;          // enable pull-up/down resistor
-    P4OUT |= BIT1;          // make resistor a pull-up
-    P2DIR &= ~BIT3;
-    P2REN |= BIT3;          // enable pull-up/down resistor
-    P2OUT |= BIT3;          // make resistor a pull-up
-
-    P4IFG &= ~BIT1;         // Clear flag
-    P4IE |= BIT1;           // Enable S1 IRQ
-    P2IFG &= ~BIT3;         // Clear flag
-    P2IE |= BIT3;           // Enable S2 IRQ
-
-    // Timer B0
-    TB0CTL |= TBCLR;        // Clear timer and dividers
-    TB0CTL |= TBSSEL__SMCLK;  // Source = SMCLK
-    TB0CTL |= MC__UP;       // Mode UP
-    TB0CCR0 = T;
-    TB0CCR1 = deltaT;
+    P1OUT |= BIT0;          // turn on to start
 
     // Timer B1
     // Math: 1s = (1*10^-6)(D1)(D2)(50k)    D1 = 5, D2 = 4
@@ -84,11 +66,6 @@ void init(void)
     TB1EX0 |= TBIDEX__5;    // divide by 5 (100)
     TB1CCR0 = 50000;
 
-    // Timer B0 Compares
-    TB0CCTL0 &= ~CCIFG;     // Clear CCR0
-    TB0CCTL0 |= CCIE;       // Enable IRQ
-    TB0CCTL1 &= ~CCIFG;     // Clear CCR1
-    TB0CCTL1 |= CCIE;       // Enable IRQ
 
     // Timer B1 Compare
     TB1CCTL0 &= ~CCIFG;     // Clear CCR0
@@ -110,10 +87,6 @@ void main(void)
 
     init();
 
-    // Set the saved DAC voltages at startup
-    // set_dac_voltage(&dac2, dac2.data);
-    // set_dac_voltage(&dac3, dac3.data);
-
     while(true)
     {
            
@@ -125,23 +98,6 @@ void main(void)
 
 //-- Interrupt Service Routines -----------------------
 
-// TB0PeriodReached
-#pragma vector = TIMER0_B0_VECTOR
-__interrupt void TB0PeriodReached(void)
-{
-    // P1OUT |= BIT0;          // LED1 on
-    TB0CCTL0 &= ~CCIFG;     // clear flag
-}
-// ----- end periodReached-----
-
-// pulseLengthReached
-#pragma vector = TIMER0_B1_VECTOR
-__interrupt void pulseLengthReached(void)
-{
-    // P1OUT &= ~BIT0;          // LED1 off
-    TB0CCTL1 &= ~CCIFG;     // clear flag
-}
-// ----- end pulseLengthReached-----
 
 // Heartbeat LED
 #pragma vector = TIMER1_B0_VECTOR
@@ -151,37 +107,3 @@ __interrupt void heartbeatLED(void)
     TB1CCTL0 &= ~CCIFG;     // clear flag
 }
 // ----- end heartbeatLED-----
-
-// increaseDutyCycle
-#pragma vector = PORT4_VECTOR
-__interrupt void increaseDutyCycle(void)
-{
-    deltaT += 26;           // 26 is close to 2.5 % of T
-    if(deltaT > 525)        // 50 % of 1 ms (N = 1050)
-    {
-        deltaT = 525;
-    }
-    else
-    {
-        TB0CCR1 = deltaT;
-    }
-    P4IFG &= ~BIT1;
-}
-// ----- end increaseDutyCycle-----
-
-// decreaseDutyCycle
-#pragma vector = PORT2_VECTOR
-__interrupt void decreaseDutyCycle(void)
-{
-    deltaT -= 26;
-    if(deltaT < 105)    // 10 % of 1 ms (1050 = N0
-    {
-        deltaT = 105;
-    }
-    else
-    {
-        TB0CCR1 = deltaT;
-    }
-    P2IFG &= ~BIT3;
-}
-// ----- end decreaseDutyCycle-----

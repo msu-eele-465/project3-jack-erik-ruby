@@ -10,9 +10,9 @@
 
 typedef enum
 {
-    LOCKED,
+    LEDLOCKED,
     MIDUNLOCK,
-    UNLOCKED,
+    LEDUNLOCKED,
     PATTERN0,
     PATTERN1,
     PATTERN2,

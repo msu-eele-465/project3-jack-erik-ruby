@@ -6,7 +6,7 @@
 */
 #include <msp430.h>
 
-#include "led_status.h"
+#include "../src/led_status.h"
 
 #include <stdio.h>
 
@@ -72,7 +72,7 @@ void set_LED(status_LED *sl, LED_State s)
     // Count up to deltaT, then to T-deltaT, then to T-that, etc.
    switch (s) 
    {
-        case LOCKED:        // set pwm to rgb(196 62 29)
+        case LEDLOCKED:        // set pwm to rgb(196 62 29)
             TB3CCR1 = 220;  // CCR1 PWM duty cycle: Amount of red 
             TB3CCR2 = 10;   // CCR2 PWM duty cycle: Amount of green 
             TB3CCR3 = 10;   // CCR3 PWM duty cycle: Amount of blue
@@ -84,7 +84,7 @@ void set_LED(status_LED *sl, LED_State s)
             TB3CCR3 = 10;   
             break;
 
-        case UNLOCKED:      // rgb(29 162 196)
+        case LEDUNLOCKED:      // rgb(29 162 196)
             TB3CCR1 = 29;  
             TB3CCR2 = 162;   
             TB3CCR3 = 196;   

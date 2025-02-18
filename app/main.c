@@ -7,7 +7,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "led_status.h"
+#include "../src/keypad.h"
+#include "../src/led_status.h"
 
 
 // #pragma PERSISTENT stores these variables in FRAM so they persist across
@@ -58,12 +59,6 @@ void init(void)
     P1DIR |= BIT0;          // Config as Output
     P1OUT |= BIT0;          // turn on to start
 
-    char pk_attempt[4] = {'x','x','x','x'};
-    char cur_char = 'Z';
-    int ret = FAILURE;
-    int count = 0;
-
-
     // Timer B1 Compare
     TB1CCTL0 &= ~CCIFG;     // Clear CCR0
     TB1CCTL0 |= CCIE;       // Enable IRQ
@@ -75,13 +70,27 @@ void init(void)
 
     init_LED(status_led);
 
+
     // init_unused();
 }
 
 
+
 void main(void)
 {
+    Keypad keypad = {
+        .lock_state = LOCKED,                           // locked is 1
+        .row_pins = {BIT3, BIT2, BIT1, BIT0},      // order is 5, 6, 7, 8
+        .col_pins = {BIT4, BIT5, BIT2, BIT0},    // order is 1, 2, 3, 4
+        .passkey = {'2','B','0','5'},
+    };
 
+    char pk_attempt[4] = {'x','x','x','x'};
+    char cur_char = 'Z';
+    int ret = FAILURE;
+    int count = 0;
+
+    init_keypad(&keypad);
     init();
     
 
@@ -99,7 +108,25 @@ void main(void)
     while(true)
     {
     //     printf("Hello World!\n");
+        ret = scan_keypad(&keypad, &cur_char);
+        __delay_cycles(100000);             // Delay for 100000*(1/MCLK)=0.1s
+        // consider moving the following code to keypad.c
+        if (ret == SUCCESS){
+            if (cur_char == 'D'){
+                set_lock(&keypad, LOCKED);
+                count = 0;
+            } else {
+                pk_attempt[count] = cur_char;
+                count++;
+                if (count == 4){
+                    check_status(&keypad, pk_attempt);
+                    count = 0;
+                }
+                    
+            }
+        }
     }
+
     return(0);
 }
 

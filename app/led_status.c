@@ -45,9 +45,9 @@ void init_LED(status_LED sl)
     TB3CCTL2 = OUTMOD_7;                      // CCR2 reset/set (green)
     TB3CCTL3 = OUTMOD_7;                      // CCR3 reset/set (blue)
     // start locked
-    TB3CCR1 = 196;                              // CCR1 PWM duty cycle: Amount of red 
-    TB3CCR2 = 62;                               // CCR2 PWM duty cycle: Amount of green 
-    TB3CCR3 = 29;                               // CCR3 PWM duty cycle: Amount of blue
+    TB3CCR1 = 255;                              // CCR1 PWM duty cycle: Amount of red 
+    TB3CCR2 = 0;                               // CCR2 PWM duty cycle: Amount of green 
+    TB3CCR3 = 0;                               // CCR3 PWM duty cycle: Amount of blue
     TB3CTL = TBSSEL__SMCLK | MC__UP | TBCLR;  // SMCLK, up mode, clear TBR
 
     PM5CTL0 &= ~LOCKLPM5;   // turn on GPIO 
@@ -72,16 +72,16 @@ void set_LED(status_LED *sl, LED_State s)
     // Count up to deltaT, then to T-deltaT, then to T-that, etc.
    switch (s) 
    {
-        case LEDLOCKED:        // set pwm to rgb(196 62 29)
-            TB3CCR1 = 220;  // CCR1 PWM duty cycle: Amount of red 
-            TB3CCR2 = 10;   // CCR2 PWM duty cycle: Amount of green 
-            TB3CCR3 = 10;   // CCR3 PWM duty cycle: Amount of blue
+        case LOCKED:        // set pwm to rgb(196 62 29)
+            TB3CCR1 = 255;  // CCR1 PWM duty cycle: Amount of red 
+            TB3CCR2 = 0;   // CCR2 PWM duty cycle: Amount of green 
+            TB3CCR3 = 0;   // CCR3 PWM duty cycle: Amount of blue
             break;
 
         case MIDUNLOCK:     // rgb(196 146 29) changed to look more yellow
-            TB3CCR1 = 220;  
-            TB3CCR2 = 120;   
-            TB3CCR3 = 10;   
+            TB3CCR1 = ;  
+            TB3CCR2 = 255;   
+            TB3CCR3 = 0;   
             break;
 
         case LEDUNLOCKED:      // rgb(29 162 196)

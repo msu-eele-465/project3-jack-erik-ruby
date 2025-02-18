@@ -94,7 +94,7 @@ void main(void)
     init();
     
 
-    // set_LED(&status_led, MIDUNLOCK);   
+    set_LED(&status_led, MIDUNLOCK);   
     // set_LED(&status_led, UNLOCKED); 
     // set_LED(&status_led, PATTERN0); 
     // set_LED(&status_led, PATTERN1); 

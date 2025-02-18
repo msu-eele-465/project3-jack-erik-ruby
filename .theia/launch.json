@@ -8,6 +8,28 @@
             "projectInfo": {
                 "name": "app",
                 "resourceId": "/app"
+            },
+            "connections": [
+                {
+                    "name": "TI MSP430 USB1",
+                    "cores": [
+                        {
+                            "name": "MSP430",
+                            "sourceDirs": [
+                                "/Users/erc/Workspaces/git_workspace/EELE465/project3-jack-erik-ruby/test/testProject",
+                                "/Users/erc/Workspaces/git_workspace/EELE465/project3-jack-erik-ruby/src"
+                            ],
+                            "sourceMappings": []
+                        }
+                    ]
+                }
+            ],
+            "debuggerSettings": {
+                "targetConfigs/MSP430FR2355.ccxml": {
+                    "TI MSP430 USB1/MSP430": {
+                        "data": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n<PropertyValues/>\n"
+                    }
+                }
             }
         }
     ]

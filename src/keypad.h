@@ -29,5 +29,7 @@
     void set_lock(Keypad *keypad, int lock);
     int scan_keypad(Keypad *keypad, char *key_press);
     int compare_pw(char passkey[], char guess[]);
+    void check_status(Keypad *keypad, char pk_attempt[]);
+    int reset_pk(char passkey[]);
 
 #endif

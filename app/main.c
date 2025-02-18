@@ -9,7 +9,15 @@
 
 #include "../src/keypad.h"
 #include "../src/led_status.h"
+#include "msp430fr2355.h"
 
+
+uint16_t base_transition_period;
+uint16_t current_pattern;
+// starting values for every pattern
+uint16_t default_patterns[8] = {170, 170, 0, 24, 255, 1, 127, 1};
+uint16_t patterns[8] = {170, 170, 0, 24, 255, 1, 127, 1};;
+char cur_char;
 
 // #pragma PERSISTENT stores these variables in FRAM so they persist across
 // power cycles. This way the DAC voltages can be set once, rather than having
@@ -58,19 +66,30 @@ void init(void)
     // LED1
     P1DIR |= BIT0;          // Config as Output
     P1OUT |= BIT0;          // turn on to start
+    // LED2
+    P6DIR |= BIT6;          // Config as Output
+    P6OUT |= BIT6;          // turn on to start
+
+    // Port 3
+    P3DIR |= 0xFF;
+    P3OUT &= 0;
 
     // Timer B1
-    // Math: 1s = (1*10^-6)(D1)(D2)(50k)    D1 = 5, D2 = 4
+    // Math: 1s = (1*10^-6)(D1)(D2)(25k)    D1 = 5, D2 = 8
     TB1CTL |= TBCLR;        // Clear timer and dividers
     TB1CTL |= TBSSEL__SMCLK;  // Source = SMCLK
     TB1CTL |= MC__UP;       // Mode UP
-    TB1CTL |= ID__4;         // divide by 4 (10)
+    TB1CTL |= ID__8;         // divide by 8 
     TB1EX0 |= TBIDEX__5;    // divide by 5 (100)
 
-    TB1CCR0 = 50000;
+    TB1CCR0 = 25000;
+    base_transition_period = 25000;
+    TB1CCR1 = base_transition_period;
     // Timer B1 Compare
     TB1CCTL0 &= ~CCIFG;     // Clear CCR0
     TB1CCTL0 |= CCIE;       // Enable IRQ
+    TB1CCTL1 &= ~CCIFG;     // Clear CCR0
+    TB1CCTL1 |= CCIE;       // Enable IRQ
 //------------- END PORT SETUP -------------------
 
     __enable_interrupt();   // enable maskable IRQs
@@ -85,7 +104,7 @@ void init(void)
 
 
 
-void main(void)
+int main(void)
 {
     Keypad keypad = {
         .lock_state = LOCKED,                           // locked is 1
@@ -95,13 +114,13 @@ void main(void)
     };
 
     char pk_attempt[4] = {'x','x','x','x'};
-    char cur_char = 'Z';
+    cur_char = 'Z';
     int ret = FAILURE;
     int count = 0;
 
+
     init_keypad(&keypad);
     init();
-    
     
     // set_LED(&status_led, MIDUNLOCK);   
     // set_LED(&status_led, UNLOCKED); 
@@ -123,12 +142,14 @@ void main(void)
         {
             if (cur_char == 'D')
             {
+                P3OUT &= 0;
                 set_lock(&keypad, LOCKED);
                 set_LED(&status_led, LEDLOCKED);
                 count = 0;
             } 
             else if (keypad.lock_state == LOCKED)  // if we're locked and trying to unlock
             {
+                P3OUT &= 0;
                 pk_attempt[count] = cur_char;
                 count++;
                 if (count == 4)
@@ -145,12 +166,113 @@ void main(void)
                     set_LED(&status_led, MIDUNLOCK);
                 }
             }
-            else            // unlocked so do pattern stuff.
+            else            // unlocked so do pattern stuff. use p3.0-3.7, and 6.4, 6.5 for MSB
             {
                 switch(cur_char)
                 {
-                    case 0:
-                        
+                    case 'A': // can't do a period of 0
+                        if(base_transition_period > 6250)
+                        {
+                            base_transition_period -= 6250;
+                            TB1CTL &= ~MC__UP;
+                            TB1CCR1 = base_transition_period;
+                            TB1CTL |= MC__UP;  // start timer again in up mode
+                        }
+                        break;
+                    case 'B': // hard ceiling at 60k
+                        if(base_transition_period < 60000)
+                        {
+                            base_transition_period += 6250;
+                            TB1CTL &= ~MC__UP;
+                            TB1CCR1 = base_transition_period;
+                            TB1CTL |= MC__UP;  // start timer again in up mode
+                        }
+                        break;
+                    case '0': // put pattern 0 on ports
+                        if(status_led.current_state != PATTERN0)
+                        {
+                            set_LED(&status_led, PATTERN0);
+                        }
+                        else        // pattern selected twice in a row, reset
+                        {
+                            patterns[0] = default_patterns[0];
+                        }
+                        break;
+                    case '1': // put pattern 1 on ports
+                        if(status_led.current_state != PATTERN1)
+                        {
+                            set_LED(&status_led, PATTERN1);
+                        }
+                        else
+                        {
+                            patterns[1] = default_patterns[1];
+                        }
+                        break;
+
+                    case '2': // put pattern 2 on ports
+                        if(status_led.current_state != PATTERN2)
+                        {
+                            set_LED(&status_led, PATTERN2);
+                        }
+                        else
+                        {
+                            patterns[2] = default_patterns[2];
+                        }
+                        break;
+
+                    case '3': // put pattern 3 on ports
+                        if(status_led.current_state != PATTERN3)
+                        {
+                            set_LED(&status_led, PATTERN3);
+                        }
+                        else
+                        {
+                            patterns[3] = default_patterns[3];
+                        }
+                        break;
+                    case '4': // put pattern 4 on ports
+                        if(status_led.current_state != PATTERN4)
+                        {
+                            set_LED(&status_led, PATTERN4);
+                        }
+                        else
+                        {
+                            patterns[4] = default_patterns[4];
+                        }
+                        break;
+                    case '5': // put pattern 5 on ports
+                        if(status_led.current_state != PATTERN5)
+                        {
+                            set_LED(&status_led, PATTERN5);
+                        }
+                        else
+                        {
+                            patterns[5] = default_patterns[5];
+                        }
+                        break;
+                    case '6': // put pattern 6 on ports
+                        if(status_led.current_state != PATTERN6)
+                        {
+                            set_LED(&status_led, PATTERN6);
+                        }
+                        else
+                        {
+                            patterns[6] = default_patterns[6];
+                        }
+                        break;
+                    case '7': // put pattern 7 on ports
+                        if(status_led.current_state != PATTERN7)
+                        {
+                            set_LED(&status_led, PATTERN7);
+                        }
+                        else
+                        {
+                            patterns[7] = default_patterns[7];
+                        }
+                        break;
+
+   
+                    default:
                         break;
                 }
             }
@@ -173,3 +295,48 @@ __interrupt void heartbeatLED(void)
     TB1CCTL0 &= ~CCIFG;     // clear flag
 }
 // ----- end heartbeatLED-----
+
+// UpdatePattern
+#pragma vector = TIMER1_B1_VECTOR
+__interrupt void updatePattern(void)
+{
+    P6OUT ^= BIT6;
+    switch(status_led.current_state)
+    {
+        case PATTERN0:
+            P3OUT = patterns[0];
+            break;
+        case PATTERN1: 
+            patterns[1] ^= 0xFF;    // flip every bit
+            P3OUT = patterns[1];
+            break;
+        case PATTERN2: // put pattern 0 on ports
+            patterns[1] ^= 0xFF;    // flip every bit
+            P3OUT = patterns[1];
+            break;
+       case PATTERN3:
+            P3OUT = patterns[0];
+            break;
+        case PATTERN4: 
+            patterns[1] ^= 0xFF;    // flip every bit
+            P3OUT = patterns[1];
+            break;
+        case PATTERN5: // put pattern 0 on ports
+            patterns[1] ^= 0xFF;    // flip every bit
+            P3OUT = patterns[1];
+            break;
+        case PATTERN6: 
+            patterns[1] ^= 0xFF;    // flip every bit
+            P3OUT = patterns[1];
+            break;
+        case PATTERN7: // put pattern 0 on ports
+            patterns[1] ^= 0xFF;    // flip every bit
+            P3OUT = patterns[1];
+            break;
+        default:
+            P3OUT = 0x00;
+            break;
+    }
+    TB1CCTL1 &= ~CCIFG;     // clear flag
+}
+// ----- end updatePattern-----

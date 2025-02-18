@@ -13,10 +13,10 @@
 
 // #pragma PERSISTENT stores these variables in FRAM so they persist across
 // power cycles. This way the DAC voltages can be set once, rather than having
-// to set them every time we power on the system.
+// to set them every time we power on the system. 5.0 to 5.2
 __attribute__((persistent)) static status_LED status_led =
 {
-    .led_port_base_addr = P6_BASE,
+    .led_port_base_addr = P5_BASE,
     .red_port_bit = BIT0,
     .green_port_bit = BIT1,
     .blue_port_bit = BIT2,

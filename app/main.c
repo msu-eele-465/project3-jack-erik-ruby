@@ -87,9 +87,20 @@ void main(void)
 
     init();
 
+    // set_LED(&status_led, MIDUNLOCK);   
+    // set_LED(&status_led, UNLOCKED); 
+    // set_LED(&status_led, PATTERN0); 
+    // set_LED(&status_led, PATTERN1); 
+    // set_LED(&status_led, PATTERN2); 
+    // set_LED(&status_led, PATTERN3); 
+    // set_LED(&status_led, PATTERN4); 
+    // set_LED(&status_led, PATTERN5); 
+    // set_LED(&status_led, PATTERN6); 
+    // set_LED(&status_led, PATTERN7);
+
     while(true)
     {
-           
+        
     }
     return(0);
 }

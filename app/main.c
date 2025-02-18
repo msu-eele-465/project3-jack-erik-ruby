@@ -29,20 +29,20 @@ void init_unused(void)
     //this just goes through every pin that is not
     //directly necessary, and puts it to output, pulled low
 
-    P1DIR |= BIT5 | BIT4 | BIT3 | BIT2 | BIT1;
-    P1OUT &= ~(BIT5 | BIT4 | BIT3 | BIT2 | BIT1);
+    // P1DIR |= BIT5 | BIT4 | BIT3 | BIT2 | BIT1;
+    // P1OUT &= ~(BIT5 | BIT4 | BIT3 | BIT2 | BIT1);
 
-    P2DIR |= BIT7 | BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0;
-    P2OUT &= ~(BIT7 | BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0);
+    // P2DIR |= BIT7 | BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0;
+    // P2OUT &= ~(BIT7 | BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0);
 
-    P3DIR |= BIT7 | BIT6 | BIT4 | BIT3 | BIT2 |BIT0;
-    P3OUT &= ~(BIT7 | BIT6 | BIT4 | BIT3 | BIT2 | BIT0);
+    // P3DIR |= BIT7 | BIT6 | BIT4 | BIT3 | BIT2 |BIT0;
+    // P3OUT &= ~(BIT7 | BIT6 | BIT4 | BIT3 | BIT2 | BIT0);
 
-    P4DIR |= BIT7 | BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0;
-    P4OUT &= ~(BIT7 | BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0);
+    // P4DIR |= BIT7 | BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0;
+    // P4OUT &= ~(BIT7 | BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0);
 
-    P5DIR |= BIT4 | BIT3 | BIT2 | BIT1 | BIT0;
-    P5OUT &= ~(BIT4 | BIT3 | BIT2 | BIT1 | BIT0);
+    // P5DIR |= BIT4 | BIT3 | BIT2 | BIT1 | BIT0;
+    // P5OUT &= ~(BIT4 | BIT3 | BIT2 | BIT1 | BIT0);
 
     // P6DIR |= BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0;
     // P6OUT &= ~(BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0);
@@ -59,6 +59,15 @@ void init(void)
     P1DIR |= BIT0;          // Config as Output
     P1OUT |= BIT0;          // turn on to start
 
+    // Timer B1
+    // Math: 1s = (1*10^-6)(D1)(D2)(50k)    D1 = 5, D2 = 4
+    TB1CTL |= TBCLR;        // Clear timer and dividers
+    TB1CTL |= TBSSEL__SMCLK;  // Source = SMCLK
+    TB1CTL |= MC__UP;       // Mode UP
+    TB1CTL |= ID__4;         // divide by 4 (10)
+    TB1EX0 |= TBIDEX__5;    // divide by 5 (100)
+
+    TB1CCR0 = 50000;
     // Timer B1 Compare
     TB1CCTL0 &= ~CCIFG;     // Clear CCR0
     TB1CCTL0 |= CCIE;       // Enable IRQ
@@ -82,7 +91,7 @@ void main(void)
         .lock_state = LOCKED,                           // locked is 1
         .row_pins = {BIT3, BIT2, BIT1, BIT0},      // order is 5, 6, 7, 8
         .col_pins = {BIT4, BIT5, BIT2, BIT0},    // order is 1, 2, 3, 4
-        .passkey = {'2','B','0','5'},
+        .passkey = {'1','1','1','1'},
     };
 
     char pk_attempt[4] = {'x','x','x','x'};
@@ -93,8 +102,8 @@ void main(void)
     init_keypad(&keypad);
     init();
     
-
-    set_LED(&status_led, MIDUNLOCK);   
+    
+    // set_LED(&status_led, MIDUNLOCK);   
     // set_LED(&status_led, UNLOCKED); 
     // set_LED(&status_led, PATTERN0); 
     // set_LED(&status_led, PATTERN1); 
@@ -107,22 +116,43 @@ void main(void)
 
     while(true)
     {
-    //     printf("Hello World!\n");
         ret = scan_keypad(&keypad, &cur_char);
         __delay_cycles(100000);             // Delay for 100000*(1/MCLK)=0.1s
         // consider moving the following code to keypad.c
-        if (ret == SUCCESS){
-            if (cur_char == 'D'){
+        if (ret == SUCCESS)
+        {
+            if (cur_char == 'D')
+            {
                 set_lock(&keypad, LOCKED);
+                set_LED(&status_led, LEDLOCKED);
                 count = 0;
-            } else {
+            } 
+            else if (keypad.lock_state == LOCKED)  // if we're locked and trying to unlock
+            {
                 pk_attempt[count] = cur_char;
                 count++;
-                if (count == 4){
-                    check_status(&keypad, pk_attempt);
+                if (count == 4)
+                {
+                    if(check_status(&keypad, pk_attempt) == SUCCESS)
+                    {
+                        set_lock(&keypad, UNLOCKED);
+                        set_LED(&status_led, LEDUNLOCKED);
+                    }
                     count = 0;
                 }
-                    
+                else if (count > 0)
+                {
+                    set_LED(&status_led, MIDUNLOCK);
+                }
+            }
+            else            // unlocked so do pattern stuff.
+            {
+                switch(cur_char)
+                {
+                    case 0:
+                        
+                        break;
+                }
             }
         }
     }

@@ -1,136 +1,133 @@
-/*
- * Erik Callery, EELE371, Lab 13.2
- * Last modified: March 6 2024 EC
- */
-#include <msp430.h> 
+/* --COPYRIGHT--,BSD_EX
+ * Copyright (c) 2016, Texas Instruments Incorporated
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *******************************************************************************
+ *
+ *                       MSP430 CODE EXAMPLE DISCLAIMER
+ *
+ * MSP430 code examples are self-contained low-level programs that typically
+ * demonstrate a single peripheral function or device feature in a highly
+ * concise manner. For this the code may rely on the device's power-on default
+ * register values and settings such as the clock configuration and care must
+ * be taken when combining code from several examples to avoid potential side
+ * effects. Also see www.ti.com/grace for a GUI- and www.ti.com/msp430ware
+ * for an API functional library-approach to peripheral configuration.
+ *
+ * --/COPYRIGHT--*/
+//******************************************************************************
+//  MSP430FR235x Demo - Toggle P1.0 using software
+//
+//  Description: Toggle P1.0 every 0.1s using software.
+//  By default, FR235x select XT1 as FLL reference.
+//  If XT1 is present, the PxSEL(XIN & XOUT) needs to configure.
+//  If XT1 is absent, switch to select REFO as FLL reference automatically.
+//  XT1 is considered to be absent in this example.
+//  ACLK = default REFO ~32768Hz, MCLK = SMCLK = default DCODIV ~1MHz.
+//
+//           MSP430FR2355
+//         ---------------
+//     /|\|               |
+//      | |               |
+//      --|RST            |
+//        |           P1.0|-->LED
+//
+//   Cash Hao
+//   Texas Instruments Inc.
+//   November 2016
+//   Built with IAR Embedded Workbench v6.50.0 & Code Composer Studio v6.2.0
+//******************************************************************************
+#include <stdio.h>
+#include <msp430.h>
+#include "../src/keypad.h"
 
-
-int deltaT = 263;       // delta-t = 1050*.25 = 250
-int T = 1050;           // T = 1/1M * N. N = 1000 (Used 1050 for an actual T= 1ms)
-
-/**
- * main.c
- */
 int main(void)
 {
-    WDTCTL = WDTPW | WDTHOLD;	// stop watchdog timer
+    WDTCTL = WDTPW | WDTHOLD;               // Stop watchdog timer
+    // -- set up UART A1
+    UCA1CTLW0 |= UCSWRST;       // Put UART A1 into SW reset
 
-//------------- Setup Ports --------------------
-    // LED1
-    P1DIR |= BIT0;          // Config as Output
-    P1OUT |= BIT0;          // turn on to start for dimmer
+    UCA1CTLW0 |= UCSSEL__SMCLK; // choose SMCLK for UART A1
+    UCA1BRW = 8;                // Set Prescalar = 8
+    UCA1MCTLW |= 0xD600;        // Configure modulation settings and low freq
+    P4SEL1 &= ~BIT3;            // changes P4.3 to use A1 UART Tx
+    P4SEL0 |= BIT3;             // puts UART A1 Tx on P4.3
 
-    // Switches
-    P4DIR &= ~BIT1;         // clear 4.1 direction = input
-    P4REN |= BIT1;          // enable pull-up/down resistor
-    P4OUT |= BIT1;          // make resistor a pull-up
-    P2DIR &= ~BIT3;
-    P2REN |= BIT3;          // enable pull-up/down resistor
-    P2OUT |= BIT3;          // make resistor a pull-up
+    P4SEL1 &= ~BIT2;            // changes P4.2 to use A1 UART Rx
+    P4SEL0 |= BIT2;             // puts UART A1 Rx on P4.2
+    
+    UCA1CTLW0 &= ~UCSWRST;      // take UART A1 out of SW reset
+    
+    P1OUT &= ~BIT0;                         // Clear P1.0 output latch for a defined power-on state
+    P1DIR |= BIT0;                          // Set P1.0 to output direction
 
-    P4IFG &= ~BIT1;         // Clear flag
-    P4IE |= BIT1;           // Enable S1 IRQ
-    P2IFG &= ~BIT3;         // Clear flag
-    P2IE |= BIT3;           // Enable S2 IRQ
+    PM5CTL0 &= ~LOCKLPM5;                   // Disable the GPIO power-on default high-impedance mode
+                                            // to activate previously configured port settings
 
-    // Timer B0
-    TB0CTL |= TBCLR;        // Clear timer and dividers
-    TB0CTL |= TBSSEL__SMCLK;  // Source = SMCLK
-    TB0CTL |= MC__UP;       // Mode UP
-    TB0CCR0 = T;
-    TB0CCR1 = deltaT;
+    Keypad keypad = {
+        .lock_state = LOCKED,                           // locked is 1
+        .row_pins = {BIT3, BIT2, BIT1, BIT0},      // order is 5, 6, 7, 8
+        .col_pins = {BIT4, BIT5, BIT2, BIT0},    // order is 1, 2, 3, 4
+        .passkey = {'2','B','0','5'},
+    };
 
-    // Timer B1
-    // Math: 1s = (1*10^-6)(D1)(D2)(50k)    D1 = 5, D2 = 4
-    TB1CTL |= TBCLR;        // Clear timer and dividers
-    TB1CTL |= TBSSEL__SMCLK;  // Source = SMCLK
-    TB1CTL |= MC__UP;       // Mode UP
-    TB1CTL |= ID__4;         // divide by 4 (10)
-    TB1EX0 |= TBIDEX__5;    // divide by 5 (100)
-    TB1CCR0 = 50000;
+    char pk_attempt[4] = {'x','x','x','x'};
+    char cur_char = 'Z';
+    int ret = FAILURE;
+    int count = 0;
 
-    // Timer B0 Compares
-    TB0CCTL0 &= ~CCIFG;     // Clear CCR0
-    TB0CCTL0 |= CCIE;       // Enable IRQ
-    TB0CCTL1 &= ~CCIFG;     // Clear CCR1
-    TB0CCTL1 |= CCIE;       // Enable IRQ
+    init_keypad(&keypad);
+    printf("starting\n");
+    fflush(stderr);
 
-    // Timer B1 Compare
-    TB1CCTL0 &= ~CCIFG;     // Clear CCR0
-    TB1CCTL0 |= CCIE;       // Enable IRQ
-
-    __enable_interrupt();   // enable maskable IRQs
-    PM5CTL0 &= ~LOCKLPM5;   // turn on GPIO
-//------------- END PORT SETUP -------------------
-
-    while(1)              // loops forever
+    while(1)
     {
-
+        P1OUT ^= BIT0;                      // Toggle P1.0 using exclusive-OR
+        __delay_cycles(100000);             // Delay for 100000*(1/MCLK)=0.1s
+        ret = scan_keypad(&keypad, &cur_char);
+        __delay_cycles(100000);             // Delay for 100000*(1/MCLK)=0.1s
+        // consider moving the following code to keypad.c
+        if (ret == SUCCESS){
+            if (cur_char == 'D'){
+                set_lock(&keypad, LOCKED);
+                count = 0;
+            } else {
+                pk_attempt[count] = cur_char;
+                count++;
+                if (count == 4){
+                    check_status(&keypad, pk_attempt);
+                    count = 0;
+                }
+                    
+            }
+        }
+        
     }
-
-
-    return 0;
 }
-
-//-- Interrupt Service Routines -----------------------
-
-// TB0PeriodReached
-#pragma vector = TIMER0_B0_VECTOR
-__interrupt void TB0PeriodReached(void)
-{
-    // P1OUT |= BIT0;          // LED1 on
-    TB0CCTL0 &= ~CCIFG;     // clear flag
-}
-// ----- end periodReached-----
-
-// pulseLengthReached
-#pragma vector = TIMER0_B1_VECTOR
-__interrupt void pulseLengthReached(void)
-{
-    // P1OUT &= ~BIT0;          // LED1 off
-    TB0CCTL1 &= ~CCIFG;     // clear flag
-}
-// ----- end pulseLengthReached-----
-
-// Heartbeat LED
-#pragma vector = TIMER1_B0_VECTOR
-__interrupt void heartbeatLED(void)
-{
-    P1OUT ^= BIT0;          // LED1 xOR
-    TB1CCTL0 &= ~CCIFG;     // clear flag
-}
-// ----- end heartbeatLED-----
-
-// increaseDutyCycle
-#pragma vector = PORT4_VECTOR
-__interrupt void increaseDutyCycle(void)
-{
-    deltaT += 26;           // 26 is close to 2.5 % of T
-    if(deltaT > 525)        // 50 % of 1 ms (N = 1050)
-    {
-        deltaT = 525;
-    }
-    else
-    {
-        TB0CCR1 = deltaT;
-    }
-    P4IFG &= ~BIT1;
-}
-// ----- end increaseDutyCycle-----
-
-// decreaseDutyCycle
-#pragma vector = PORT2_VECTOR
-__interrupt void decreaseDutyCycle(void)
-{
-    deltaT -= 26;
-    if(deltaT < 105)    // 10 % of 1 ms (1050 = N0
-    {
-        deltaT = 105;
-    }
-    else
-    {
-        TB0CCR1 = deltaT;
-    }
-    P2IFG &= ~BIT3;
-}
-// ----- end decreaseDutyCycle-----

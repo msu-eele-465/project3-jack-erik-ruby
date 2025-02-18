@@ -73,13 +73,28 @@ int compare_pw(char *passkey, char *guess){
     int current;
     for (current = 0; current < 4; current++){
         if (passkey[current] != guess[current]){
-            int i;
-            for (i = 0; i < 4; i++){
-                guess[i] = 'x';
-            }
+            reset_pk(guess);
             return FAILURE;
         }
             
     }
     return SUCCESS;
+}
+
+int reset_pk(char *passkey){
+    int i;
+    for (i = 0; i < 4; i++){
+        passkey[i] = 'x';
+    }
+}
+
+void check_status(Keypad *keypad, char pk_attempt[]){
+    int ret;
+    ret = compare_pw(keypad->passkey, pk_attempt);
+    if (ret != SUCCESS){
+        printf("failed to unlock, resetting");
+    } else {
+        keypad->lock_state = UNLOCKED;
+        printf("unlocked keypad\n");
+    }
 }

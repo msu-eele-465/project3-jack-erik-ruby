@@ -1,7 +1,7 @@
 #include "../src/keypad.h"
 #include <msp430.h>
 
-// reversed to match datasheet to match pin indices
+// reversed to match datasheet to pin indices
 char key_chars[4][4] = {
     {'D', '#', '0', '*'},  
     {'C', '9', '8', '7'},  
@@ -9,6 +9,7 @@ char key_chars[4][4] = {
     {'A', '3', '2', '1'}  
 };
 
+/* Initialize keypad GPIO pins*/
 void init_keypad(Keypad *keypad) {
     // set keypad row pins as input
     int i;
@@ -33,12 +34,16 @@ void init_keypad(Keypad *keypad) {
     // lock keypad
     // keypad->lockState = LOCKED;
 }
+
+/* set state to locked or unlocked depending on a given char value */
 void set_lock(Keypad *keypad, int lock) {
     if (lock != LOCKED)
         keypad->lock_state = UNLOCKED;
     else
         keypad->lock_state = LOCKED;
 }
+
+/* check for a button press by setting a column low, then checking which row is also low */
 int scan_keypad(Keypad *keypad, char *key_press) {
     // for each col, check if there is a LOW row
     int col, row;
@@ -63,6 +68,7 @@ int scan_keypad(Keypad *keypad, char *key_press) {
     return FAILURE;
 }
 
+/* compare the keypad passkey to the user's guess */
 int compare_pw(char *passkey, char *guess){
     int current;
     for (current = 0; current < 4; current++){

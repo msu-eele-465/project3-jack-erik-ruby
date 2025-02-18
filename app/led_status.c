@@ -91,51 +91,51 @@ void set_LED(status_LED *sl, LED_State s)
             break;
 
         case PATTERN0:
-            TB3CCR1 = 196;  
-            TB3CCR2 = 146;   
-            TB3CCR3 = 29;  
+            TB3CCR1 = 0;  
+            TB3CCR2 = 255;   
+            TB3CCR3 = 0;  
             break;
 
         case PATTERN1:
-            TB3CCR1 = 196;  
-            TB3CCR2 = 146;   
-            TB3CCR3 = 29; 
+            TB3CCR1 = 0;  
+            TB3CCR2 = 0;   
+            TB3CCR3 = 255; 
             break;
 
         case PATTERN2:
-            TB3CCR1 = 196;  
-            TB3CCR2 = 146;   
-            TB3CCR3 = 29; 
+            TB3CCR1 = 255;  
+            TB3CCR2 = 0;   
+            TB3CCR3 = 255; 
             break;
 
         case PATTERN3:
-            TB3CCR1 = 196;  
-            TB3CCR2 = 146;   
-            TB3CCR3 = 29;   
+            TB3CCR1 = 19;  
+            TB3CCR2 = 250;   
+            TB3CCR3 = 140;   
             break;
 
         case PATTERN4:
-            TB3CCR1 = 196;  
-            TB3CCR2 = 146;   
-            TB3CCR3 = 29;   
+            TB3CCR1 = 0;  
+            TB3CCR2 = 255;   
+            TB3CCR3 = 255;   
             break;
 
         case PATTERN5:
-            TB3CCR1 = 196;  
-            TB3CCR2 = 146;   
-            TB3CCR3 = 29;   
+            TB3CCR1 = 10;  
+            TB3CCR2 = 20;   
+            TB3CCR3 = 69;   
             break;
 
         case PATTERN6:
-            TB3CCR1 = 196;  
+            TB3CCR1 = 200;  
             TB3CCR2 = 146;   
-            TB3CCR3 = 29;   
+            TB3CCR3 = 170;   
             break;
 
         case PATTERN7:
-            TB3CCR1 = 196;  
+            TB3CCR1 = 20;  
             TB3CCR2 = 146;   
-            TB3CCR3 = 29;   
+            TB3CCR3 = 129;   
             break;
 
         // default to locked

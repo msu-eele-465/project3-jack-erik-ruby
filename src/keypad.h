@@ -15,6 +15,7 @@
     #ifndef FAILURE
     #define FAILURE 0
     #endif
+    
 
     typedef struct {
         int lock_state;

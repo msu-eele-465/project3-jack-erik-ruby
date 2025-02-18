@@ -24,15 +24,19 @@
 */
 void init_LED(status_LED sl)
 {
+    
     // Define the base addresses for the port multiplexing registers, PxSEL1 and
     // PxSEL0. These offsets are NOT the same for all ports, and are defined in
     // msp430fr2355.h.
     uint16_t *PX_SEL0 = (uint16_t *) (sl.led_port_base_addr + OFS_P6SEL0); 
-    uint16_t *PX_DIR = (uint16_t *) (sl.led_port_base_addr + OFS_P6DIR); 
+    uint16_t *PX_DIR = (uint16_t *) (sl.led_port_base_addr + OFS_P6DIR);
 
      // Configure GPIO
     *PX_DIR |= sl.red_port_bit + sl.green_port_bit + sl.blue_port_bit;
     *PX_SEL0 |= sl.red_port_bit + sl.green_port_bit + sl.blue_port_bit;
+    // printf("PX_SEL0 address: %d\n", *PX_SEL0);
+    // printf("PX_DIR address: %d\n", *PX_DIR);
+
     // P6DIR |= sl.red_port_bit + sl.green_port_bit + sl.blue_port_bit;
     // P6SEL0 |= sl.red_port_bit + sl.green_port_bit + sl.blue_port_bit;
 
@@ -46,7 +50,7 @@ void init_LED(status_LED sl)
     TB3CCR3 = 29;                               // CCR3 PWM duty cycle: Amount of blue
     TB3CTL = TBSSEL__SMCLK | MC__UP | TBCLR;  // SMCLK, up mode, clear TBR
 
-    PM5CTL0 &= ~LOCKLPM5;   // turn on GPIO
+    PM5CTL0 &= ~LOCKLPM5;   // turn on GPIO 
 }
 
 /**

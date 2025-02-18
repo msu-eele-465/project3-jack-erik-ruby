@@ -5,6 +5,7 @@
 #include <msp430.h> 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "led_status.h"
 
@@ -86,6 +87,7 @@ void main(void)
 {
 
     init();
+    
 
     // set_LED(&status_led, MIDUNLOCK);   
     // set_LED(&status_led, UNLOCKED); 
@@ -100,7 +102,7 @@ void main(void)
 
     while(true)
     {
-        
+    //     printf("Hello World!\n");
     }
     return(0);
 }

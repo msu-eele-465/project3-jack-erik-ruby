@@ -32,13 +32,13 @@ void init_LED(status_LED sl)
     uint16_t *PX_DIR = (uint16_t *) (sl.led_port_base_addr + OFS_P6DIR);
 
      // Configure GPIO
-    *PX_DIR |= sl.red_port_bit + sl.green_port_bit + sl.blue_port_bit;
-    *PX_SEL0 |= sl.red_port_bit + sl.green_port_bit + sl.blue_port_bit;
+    // *PX_DIR |= sl.red_port_bit + sl.green_port_bit + sl.blue_port_bit;
+    // *PX_SEL0 |= sl.red_port_bit + sl.green_port_bit + sl.blue_port_bit;
     // printf("PX_SEL0 address: %d\n", *PX_SEL0);
     // printf("PX_DIR address: %d\n", *PX_DIR);
 
-    // P6DIR |= sl.red_port_bit + sl.green_port_bit + sl.blue_port_bit;
-    // P6SEL0 |= sl.red_port_bit + sl.green_port_bit + sl.blue_port_bit;
+    P6DIR |= sl.red_port_bit + sl.green_port_bit + sl.blue_port_bit;
+    P6SEL0 |= sl.red_port_bit + sl.green_port_bit + sl.blue_port_bit;
 
     TB3CCR0 = 256-1;                          // PWM Period
     TB3CCTL1 = OUTMOD_7;                      // CCR1 reset/set (red)
@@ -73,15 +73,15 @@ void set_LED(status_LED *sl, LED_State s)
    switch (s) 
    {
         case LOCKED:        // set pwm to rgb(196 62 29)
-            TB3CCR1 = 196;  // CCR1 PWM duty cycle: Amount of red 
-            TB3CCR2 = 62;   // CCR2 PWM duty cycle: Amount of green 
-            TB3CCR3 = 29;   // CCR3 PWM duty cycle: Amount of blue
+            TB3CCR1 = 220;  // CCR1 PWM duty cycle: Amount of red 
+            TB3CCR2 = 10;   // CCR2 PWM duty cycle: Amount of green 
+            TB3CCR3 = 10;   // CCR3 PWM duty cycle: Amount of blue
             break;
 
-        case MIDUNLOCK:     // rgb(196 146 29)
-            TB3CCR1 = 196;  
-            TB3CCR2 = 146;   
-            TB3CCR3 = 29;   
+        case MIDUNLOCK:     // rgb(196 146 29) changed to look more yellow
+            TB3CCR1 = 220;  
+            TB3CCR2 = 120;   
+            TB3CCR3 = 10;   
             break;
 
         case UNLOCKED:      // rgb(29 162 196)

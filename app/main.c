@@ -58,14 +58,10 @@ void init(void)
     P1DIR |= BIT0;          // Config as Output
     P1OUT |= BIT0;          // turn on to start
 
-    // Timer B1
-    // Math: 1s = (1*10^-6)(D1)(D2)(50k)    D1 = 5, D2 = 4
-    TB1CTL |= TBCLR;        // Clear timer and dividers
-    TB1CTL |= TBSSEL__SMCLK;  // Source = SMCLK
-    TB1CTL |= MC__UP;       // Mode UP
-    TB1CTL |= ID__4;         // divide by 4 (10)
-    TB1EX0 |= TBIDEX__5;    // divide by 5 (100)
-    TB1CCR0 = 50000;
+    char pk_attempt[4] = {'x','x','x','x'};
+    char cur_char = 'Z';
+    int ret = FAILURE;
+    int count = 0;
 
 
     // Timer B1 Compare

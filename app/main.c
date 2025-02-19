@@ -74,6 +74,18 @@ void init(void)
     P3DIR |= 0xFF;
     P3OUT &= 0;
 
+    // Timer B0
+    // Math: 1s = (1*10^-6)(D1)(D2)(25k)    D1 = 5, D2 = 8
+    TB0CTL |= TBCLR;        // Clear timer and dividers
+    TB0CTL |= TBSSEL__SMCLK;  // Source = SMCLK
+    TB0CTL |= MC__UP;       // Mode UP
+    TB0CTL |= ID__8;         // divide by 8 
+    TB0EX0 |= TBIDEX__5;    // divide by 5 (100)
+
+    TB0CCR0 = 25000;
+
+    TB0CCTL0 &= ~CCIFG;     // Clear CCR0
+    TB0CCTL0 |= CCIE;       // Enable IRQ
     // Timer B1
     // Math: 1s = (1*10^-6)(D1)(D2)(25k)    D1 = 5, D2 = 8
     TB1CTL |= TBCLR;        // Clear timer and dividers
@@ -82,14 +94,12 @@ void init(void)
     TB1CTL |= ID__8;         // divide by 8 
     TB1EX0 |= TBIDEX__5;    // divide by 5 (100)
 
-    TB1CCR0 = 25000;
     base_transition_period = 25000;
-    TB1CCR1 = base_transition_period;
-    // Timer B1 Compare
+    TB1CCR0 = base_transition_period;
+
     TB1CCTL0 &= ~CCIFG;     // Clear CCR0
     TB1CCTL0 |= CCIE;       // Enable IRQ
-    TB1CCTL1 &= ~CCIFG;     // Clear CCR0
-    TB1CCTL1 |= CCIE;       // Enable IRQ
+    
 //------------- END PORT SETUP -------------------
 
     __enable_interrupt();   // enable maskable IRQs
@@ -175,7 +185,7 @@ int main(void)
                         {
                             base_transition_period -= 6250;
                             TB1CTL &= ~MC__UP;
-                            TB1CCR1 = base_transition_period;
+                            TB1CCR0 = base_transition_period;
                             TB1CTL |= MC__UP;  // start timer again in up mode
                         }
                         break;
@@ -184,7 +194,7 @@ int main(void)
                         {
                             base_transition_period += 6250;
                             TB1CTL &= ~MC__UP;
-                            TB1CCR1 = base_transition_period;
+                            TB1CCR0 = base_transition_period;
                             TB1CTL |= MC__UP;  // start timer again in up mode
                         }
                         break;
@@ -277,6 +287,7 @@ int main(void)
                 }
             }
         }
+        __delay_cycles(100000);             // Delay for 100000*(1/MCLK)=0.1s
     }
 
     return(0);
@@ -288,7 +299,7 @@ int main(void)
 
 
 // Heartbeat LED
-#pragma vector = TIMER1_B0_VECTOR
+#pragma vector = TIMER0_B0_VECTOR
 __interrupt void heartbeatLED(void)
 {
     P1OUT ^= BIT0;          // LED1 xOR
@@ -297,7 +308,7 @@ __interrupt void heartbeatLED(void)
 // ----- end heartbeatLED-----
 
 // UpdatePattern
-#pragma vector = TIMER1_B1_VECTOR
+#pragma vector = TIMER1_B0_VECTOR
 __interrupt void updatePattern(void)
 {
     P6OUT ^= BIT6;

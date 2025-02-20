@@ -5,7 +5,8 @@ In this project, a keypad will be used to select from different time-varying pat
 
 ## Architecture
 There are a total of 3 external devices: RGB LED, LED Bar, and a 4x4 membrane keypad. The architecture of the project using these devices with the MSP430 is as follows.
-![alt text](docs/resources/)
+<img src="https://github.com/msu-eele-465/project3-jack-erik-ruby/blob/main/docs/resources/lock_state.JPG" alt="lock_state" style="width:50%; height:auto;"> 
 
 ## Flowchart
-![alt text](docs/resources/Project3_Charts.svg)
+Below is the 
+<img src="https://github.com/msu-eele-465/project3-jack-erik-ruby/blob/main/docs/resources/Project3_Charts.svg" alt="flowchart" style="width:50%; height:auto;"> 

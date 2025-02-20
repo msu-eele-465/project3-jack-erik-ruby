@@ -5,8 +5,12 @@ In this project, a keypad will be used to select from different time-varying pat
 
 ## Architecture
 There are a total of 3 external devices: RGB LED, LED Bar, and a 4x4 membrane keypad. The architecture of the project using these devices with the MSP430 is as follows.
-<img src="https://github.com/msu-eele-465/project3-jack-erik-ruby/blob/main/docs/resources/lock_state.JPG" alt="lock_state" style="width:50%; height:auto;"> 
+<img src="https://github.com/msu-eele-465/project3-jack-erik-ruby/blob/main/docs/resources/SoftwareArchitecture.svg" alt="architecture" style="width:50%; height:auto;"> 
 
 ## Flowchart
-Below is the 
-<img src="https://github.com/msu-eele-465/project3-jack-erik-ruby/blob/main/docs/resources/Project3_Charts.svg" alt="flowchart" style="width:50%; height:auto;"> 
+Project has a locked state and unlocked state. After unlocking, the user can choose a pattern. The RGB LED and LED Bar change color depending on the state and pattern.
+<img src="https://github.com/msu-eele-465/project3-jack-erik-ruby/blob/main/docs/resources/Project3_Charts.svg" alt="flowchart" style="width:75%; height:auto;"> 
+
+## Circuit diagram
+
+<img src="https://github.com/msu-eele-465/project3-jack-erik-ruby/blob/main/docs/resources/CircuitDiagram.svg" alt="circuit diagram" style="width:50%; height:auto;">

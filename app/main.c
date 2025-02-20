@@ -2,6 +2,7 @@
  * Erik Callery, EELE371, Lab 13.2
  * Last modified: March 6 2024 EC
  */
+#include <limits.h>
 #include <msp430.h> 
 #include <stdbool.h>
 #include <stdint.h>
@@ -13,11 +14,20 @@
 
 
 uint16_t base_transition_period;
-uint16_t current_pattern;
+uint8_t current_pattern, led3_counter = 0;
+float base_multiplier = 1;
 // starting values for every pattern
-uint16_t default_patterns[8] = {170, 170, 0, 24, 255, 1, 127, 1};
-uint16_t patterns[8] = {170, 170, 0, 24, 255, 1, 127, 1};;
+const uint8_t DEFAULT_PATTERNS[8] = {170, 170, 0, 24, 255, 1, 127, 1};
+uint8_t patterns[8] = {170, 170, 0, 24, 255, 1, 127, 1};;
 char cur_char;
+const uint8_t LED3_PATTERN[6] = {
+    0b00011000,  // Step 0
+    0b00100100,  // Step 1
+    0b01000010,  // Step 2
+    0b10000001,  // Step 3
+    0b01000010,  // Step 4
+    0b00100100   // Step 5
+};
 
 // #pragma PERSISTENT stores these variables in FRAM so they persist across
 // power cycles. This way the DAC voltages can be set once, rather than having
@@ -30,32 +40,6 @@ __attribute__((persistent)) static status_LED status_led =
     .blue_port_bit = BIT2,
     .current_state = LEDLOCKED
 };
-
-
-void init_unused(void)
-{
-    //this just goes through every pin that is not
-    //directly necessary, and puts it to output, pulled low
-
-    // P1DIR |= BIT5 | BIT4 | BIT3 | BIT2 | BIT1;
-    // P1OUT &= ~(BIT5 | BIT4 | BIT3 | BIT2 | BIT1);
-
-    // P2DIR |= BIT7 | BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0;
-    // P2OUT &= ~(BIT7 | BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0);
-
-    // P3DIR |= BIT7 | BIT6 | BIT4 | BIT3 | BIT2 |BIT0;
-    // P3OUT &= ~(BIT7 | BIT6 | BIT4 | BIT3 | BIT2 | BIT0);
-
-    // P4DIR |= BIT7 | BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0;
-    // P4OUT &= ~(BIT7 | BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0);
-
-    // P5DIR |= BIT4 | BIT3 | BIT2 | BIT1 | BIT0;
-    // P5OUT &= ~(BIT4 | BIT3 | BIT2 | BIT1 | BIT0);
-
-    // P6DIR |= BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0;
-    // P6OUT &= ~(BIT6 | BIT5 | BIT4 | BIT3 | BIT2 | BIT1 | BIT0);
-}
-
 
 void init(void)
 {
@@ -74,6 +58,18 @@ void init(void)
     P3DIR |= 0xFF;
     P3OUT &= 0;
 
+    // Timer B0
+    // Math: 1s = (1*10^-6)(D1)(D2)(25k)    D1 = 5, D2 = 8
+    TB0CTL |= TBCLR;        // Clear timer and dividers
+    TB0CTL |= TBSSEL__SMCLK;  // Source = SMCLK
+    TB0CTL |= MC__UP;       // Mode UP
+    TB0CTL |= ID__8;         // divide by 8 
+    TB0EX0 |= TBIDEX__5;    // divide by 5 (100)
+
+    TB0CCR0 = 25000;
+
+    TB0CCTL0 &= ~CCIFG;     // Clear CCR0
+    TB0CCTL0 |= CCIE;       // Enable IRQ
     // Timer B1
     // Math: 1s = (1*10^-6)(D1)(D2)(25k)    D1 = 5, D2 = 8
     TB1CTL |= TBCLR;        // Clear timer and dividers
@@ -82,14 +78,12 @@ void init(void)
     TB1CTL |= ID__8;         // divide by 8 
     TB1EX0 |= TBIDEX__5;    // divide by 5 (100)
 
-    TB1CCR0 = 25000;
     base_transition_period = 25000;
-    TB1CCR1 = base_transition_period;
-    // Timer B1 Compare
+    TB1CCR0 = base_transition_period;
+
     TB1CCTL0 &= ~CCIFG;     // Clear CCR0
     TB1CCTL0 |= CCIE;       // Enable IRQ
-    TB1CCTL1 &= ~CCIFG;     // Clear CCR0
-    TB1CCTL1 |= CCIE;       // Enable IRQ
+    
 //------------- END PORT SETUP -------------------
 
     __enable_interrupt();   // enable maskable IRQs
@@ -97,9 +91,6 @@ void init(void)
 
 
     init_LED(status_led);
-
-
-    // init_unused();
 }
 
 
@@ -121,17 +112,6 @@ int main(void)
 
     init_keypad(&keypad);
     init();
-    
-    // set_LED(&status_led, MIDUNLOCK);   
-    // set_LED(&status_led, UNLOCKED); 
-    // set_LED(&status_led, PATTERN0); 
-    // set_LED(&status_led, PATTERN1); 
-    // set_LED(&status_led, PATTERN2); 
-    // set_LED(&status_led, PATTERN3); 
-    // set_LED(&status_led, PATTERN4); 
-    // set_LED(&status_led, PATTERN5); 
-    // set_LED(&status_led, PATTERN6); 
-    // set_LED(&status_led, PATTERN7);
 
     while(true)
     {
@@ -174,109 +154,114 @@ int main(void)
                         if(base_transition_period > 6250)
                         {
                             base_transition_period -= 6250;
-                            TB1CTL &= ~MC__UP;
-                            TB1CCR1 = base_transition_period;
-                            TB1CTL |= MC__UP;  // start timer again in up mode
                         }
                         break;
-                    case 'B': // hard ceiling at 60k
-                        if(base_transition_period < 60000)
+                    case 'B': // hard ceiling at 41k (62k/1.5)
+                        if(base_transition_period < 41000)
                         {
                             base_transition_period += 6250;
-                            TB1CTL &= ~MC__UP;
-                            TB1CCR1 = base_transition_period;
-                            TB1CTL |= MC__UP;  // start timer again in up mode
                         }
                         break;
                     case '0': // put pattern 0 on ports
+                        base_multiplier = 1;
                         if(status_led.current_state != PATTERN0)
                         {
                             set_LED(&status_led, PATTERN0);
                         }
                         else        // pattern selected twice in a row, reset
                         {
-                            patterns[0] = default_patterns[0];
+                            patterns[0] = DEFAULT_PATTERNS[0];
                         }
                         break;
                     case '1': // put pattern 1 on ports
+                        base_multiplier = 1;
                         if(status_led.current_state != PATTERN1)
                         {
                             set_LED(&status_led, PATTERN1);
                         }
                         else
                         {
-                            patterns[1] = default_patterns[1];
+                            patterns[1] = DEFAULT_PATTERNS[1];
                         }
                         break;
 
                     case '2': // put pattern 2 on ports
+                        base_multiplier = .5;
                         if(status_led.current_state != PATTERN2)
                         {
                             set_LED(&status_led, PATTERN2);
                         }
                         else
                         {
-                            patterns[2] = default_patterns[2];
+                            patterns[2] = DEFAULT_PATTERNS[2];
                         }
                         break;
 
                     case '3': // put pattern 3 on ports
+                        base_multiplier = .5;
                         if(status_led.current_state != PATTERN3)
                         {
                             set_LED(&status_led, PATTERN3);
                         }
                         else
                         {
-                            patterns[3] = default_patterns[3];
+                            patterns[3] = DEFAULT_PATTERNS[3];
                         }
                         break;
                     case '4': // put pattern 4 on ports
+                        base_multiplier = .25;
                         if(status_led.current_state != PATTERN4)
                         {
                             set_LED(&status_led, PATTERN4);
                         }
                         else
                         {
-                            patterns[4] = default_patterns[4];
+                            patterns[4] = DEFAULT_PATTERNS[4];
                         }
                         break;
                     case '5': // put pattern 5 on ports
+                        base_multiplier = 1.5;
                         if(status_led.current_state != PATTERN5)
                         {
                             set_LED(&status_led, PATTERN5);
                         }
                         else
                         {
-                            patterns[5] = default_patterns[5];
+                            patterns[5] = DEFAULT_PATTERNS[5];
                         }
                         break;
                     case '6': // put pattern 6 on ports
+                        base_multiplier = .5;
                         if(status_led.current_state != PATTERN6)
                         {
                             set_LED(&status_led, PATTERN6);
                         }
                         else
                         {
-                            patterns[6] = default_patterns[6];
+                            patterns[6] = DEFAULT_PATTERNS[6];
                         }
                         break;
                     case '7': // put pattern 7 on ports
+                        base_multiplier = 1;
                         if(status_led.current_state != PATTERN7)
                         {
                             set_LED(&status_led, PATTERN7);
                         }
                         else
                         {
-                            patterns[7] = default_patterns[7];
+                            patterns[7] = DEFAULT_PATTERNS[7];
                         }
                         break;
 
-   
                     default:
                         break;
                 }
+                TB1CTL &= ~MC__UP;
+                TB1CCR0 = base_transition_period * base_multiplier;
+                TB1CTL |= MC__UP;  // start timer again in up mode
             }
         }
+        __delay_cycles(100000);             // Delay for 100000*(1/MCLK)=0.1s
     }
 
     return(0);
@@ -288,7 +273,7 @@ int main(void)
 
 
 // Heartbeat LED
-#pragma vector = TIMER1_B0_VECTOR
+#pragma vector = TIMER0_B0_VECTOR
 __interrupt void heartbeatLED(void)
 {
     P1OUT ^= BIT0;          // LED1 xOR
@@ -297,7 +282,7 @@ __interrupt void heartbeatLED(void)
 // ----- end heartbeatLED-----
 
 // UpdatePattern
-#pragma vector = TIMER1_B1_VECTOR
+#pragma vector = TIMER1_B0_VECTOR
 __interrupt void updatePattern(void)
 {
     P6OUT ^= BIT6;
@@ -310,28 +295,57 @@ __interrupt void updatePattern(void)
             patterns[1] ^= 0xFF;    // flip every bit
             P3OUT = patterns[1];
             break;
-        case PATTERN2: // put pattern 0 on ports
-            patterns[1] ^= 0xFF;    // flip every bit
-            P3OUT = patterns[1];
+        case PATTERN2: 
+            patterns[2] += 1;    // up counter
+            P3OUT = patterns[2];
             break;
-       case PATTERN3:
-            P3OUT = patterns[0];
+       case PATTERN3:           // in and out
+            patterns[3] = LED3_PATTERN[led3_counter];
+            ++led3_counter;
+            if(led3_counter == 6)
+            {
+                led3_counter = 0;
+            }
+            P3OUT = patterns[3];
             break;
         case PATTERN4: 
-            patterns[1] ^= 0xFF;    // flip every bit
-            P3OUT = patterns[1];
+            patterns[4] -= 1;    // down counter
+            P3OUT = patterns[4];
             break;
-        case PATTERN5: // put pattern 0 on ports
-            patterns[1] ^= 0xFF;    // flip every bit
-            P3OUT = patterns[1];
+        case PATTERN5:          // rotate left
+            if(patterns[5] == 0b10000000)
+            {
+                patterns[5] = DEFAULT_PATTERNS[5];
+            }
+            else 
+            {
+                patterns[5] <<= 1;    
+            }
+            P3OUT = patterns[5];
             break;
-        case PATTERN6: 
-            patterns[1] ^= 0xFF;    // flip every bit
-            P3OUT = patterns[1];
+        case PATTERN6:          // rotate right
+            if(patterns[6] == 0b11111110)
+            {
+                patterns[6] = DEFAULT_PATTERNS[6];
+            }
+            else 
+            {
+                patterns[6] >>= 1;  
+                patterns[6] += 128;     // add a 1 at msb
+            } 
+            P3OUT = patterns[6];
             break;
-        case PATTERN7: // put pattern 0 on ports
-            patterns[1] ^= 0xFF;    // flip every bit
-            P3OUT = patterns[1];
+        case PATTERN7:          // fill to the left
+            if(patterns[7] == 0b11111111)
+            {
+                patterns[7] = DEFAULT_PATTERNS[7];
+            }
+            else 
+            {
+                patterns[7] <<= 1; 
+                patterns[7] += 1;   
+            }
+            P3OUT = patterns[7];
             break;
         default:
             P3OUT = 0x00;

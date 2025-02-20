@@ -1,8 +1,8 @@
-/*
- * Erik Callery, EELE371, Lab 13.2
- * Last modified: March 6 2024 EC
- */
-#include <limits.h>
+/**
+* @file
+* @brief Implements LED_status and keypad to operate a pattern-displaying LED bar
+*
+*/
 #include <msp430.h> 
 #include <stdbool.h>
 #include <stdint.h>
@@ -41,6 +41,13 @@ __attribute__((persistent)) static status_LED status_led =
     .current_state = LEDLOCKED
 };
 
+/**
+* initializes LED 1, Timers, and LED bar ports
+* 
+* @param: NA
+*
+* @return: NA
+*/
 void init(void)
 {
     // Disable watchdog timer
@@ -94,7 +101,13 @@ void init(void)
 }
 
 
-
+/**
+* Handle character reading and set base multiplier, setting patterns as well
+* 
+* @param: NA
+*
+* @return: NA
+*/
 int main(void)
 {
     Keypad keypad = {
@@ -117,7 +130,6 @@ int main(void)
     {
         ret = scan_keypad(&keypad, &cur_char);
         __delay_cycles(100000);             // Delay for 100000*(1/MCLK)=0.1s
-        // consider moving the following code to keypad.c
         if (ret == SUCCESS)
         {
             if (cur_char == 'D')
@@ -272,7 +284,9 @@ int main(void)
 //-- Interrupt Service Routines -----------------------
 
 
-// Heartbeat LED
+/**
+* Heartbeat LED
+*/
 #pragma vector = TIMER0_B0_VECTOR
 __interrupt void heartbeatLED(void)
 {
@@ -281,7 +295,10 @@ __interrupt void heartbeatLED(void)
 }
 // ----- end heartbeatLED-----
 
-// UpdatePattern
+/**
+* UpdatePattern:
+* updates patterns
+*/
 #pragma vector = TIMER1_B0_VECTOR
 __interrupt void updatePattern(void)
 {

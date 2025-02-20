@@ -1,3 +1,8 @@
+/**
+* @file
+* @brief Keypad reading functionality
+*
+*/
 #include "../src/keypad.h"
 #include <msp430.h>
 
@@ -24,15 +29,6 @@ void init_keypad(Keypad *keypad) {
         P2DIR |= keypad->col_pins[i];         // set pin to output
         P2OUT |= keypad->col_pins[i];         // set high
     }
-
-    // this functionality is already hardcoded by the struct init
-    // set passkey, 
-    // for (i = 0; i < 4; i++){
-    //     keypad->password[i] = passkey[i];
-    // }
-
-    // lock keypad
-    // keypad->lockState = LOCKED;
 }
 
 /* set state to locked or unlocked depending on a given char value */
@@ -55,7 +51,6 @@ int scan_keypad(Keypad *keypad, char *key_press) {
 
         for(row = 0; row < 4; row++){
             if (!(P5IN & keypad->row_pins[row])){
-                printf("got input! switch from %c to %c\n", *key_press, key_chars[row][col]);
                 *key_press = key_chars[row][col];
                 // set col HIGH
                 P2OUT |= keypad->col_pins[col];

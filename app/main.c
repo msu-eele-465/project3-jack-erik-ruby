@@ -20,6 +20,18 @@ float base_multiplier = 1;
 const uint8_t DEFAULT_PATTERNS[8] = {170, 170, 0, 24, 255, 1, 127, 1};
 uint8_t patterns[8] = {170, 170, 0, 24, 255, 1, 127, 1};;
 char cur_char;
+int reset_counter = 0;
+
+// global keypad and attempt
+Keypad keypad = {
+    .lock_state = LOCKED,                           // locked is 1
+    .row_pins = {BIT3, BIT2, BIT1, BIT0},      // order is 5, 6, 7, 8
+    .col_pins = {BIT4, BIT5, BIT2, BIT0},    // order is 1, 2, 3, 4
+    .passkey = {'1','1','1','1'},
+};
+
+char pk_attempt[4] = {'x','x','x','x'};
+
 const uint8_t LED3_PATTERN[6] = {
     0b00011000,  // Step 0
     0b00100100,  // Step 1
@@ -110,14 +122,6 @@ void init(void)
 */
 int main(void)
 {
-    Keypad keypad = {
-        .lock_state = LOCKED,                           // locked is 1
-        .row_pins = {BIT3, BIT2, BIT1, BIT0},      // order is 5, 6, 7, 8
-        .col_pins = {BIT4, BIT5, BIT2, BIT0},    // order is 1, 2, 3, 4
-        .passkey = {'1','1','1','1'},
-    };
-
-    char pk_attempt[4] = {'x','x','x','x'};
     cur_char = 'Z';
     int ret = FAILURE;
     int count = 0;
@@ -137,10 +141,13 @@ int main(void)
                 P3OUT &= 0;
                 set_lock(&keypad, LOCKED);
                 set_LED(&status_led, LEDLOCKED);
+                reset_pk(pk_attempt);
                 count = 0;
+                reset_counter = 0;
             } 
             else if (keypad.lock_state == LOCKED)  // if we're locked and trying to unlock
             {
+                reset_counter = 0;
                 P3OUT &= 0;
                 pk_attempt[count] = cur_char;
                 count++;
@@ -291,6 +298,14 @@ int main(void)
 __interrupt void heartbeatLED(void)
 {
     P1OUT ^= BIT0;          // LED1 xOR
+    reset_counter++;
+    if (reset_counter >= 5 && status_led.current_state == MIDUNLOCK){
+        P3OUT &= 0;
+        set_lock(&keypad, LOCKED);
+        set_LED(&status_led, LEDLOCKED);
+        reset_pk(pk_attempt);
+        reset_counter = 0;
+    }
     TB1CCTL0 &= ~CCIFG;     // clear flag
 }
 // ----- end heartbeatLED-----
